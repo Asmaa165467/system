@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>نظام إدارة وتحليل نتائج الطلاب</title>
+<link href="bootstrap-5.2.3-dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+<link href="bootstrap-icons-1.13.2/fonts/bootstrap-icons.woff" rel="stylesheet">
+<style>
+  :root {
+    --navy: #12263f;
+    --navy-2: #1d3a5f;
+    --teal: #0f8b8d;
+    --amber: #e0a526;
+    --ink: #1f2a37;
+    --muted: #6b7a8c;
+    --line: #e3e8ef;
+    --bg: #eef2f7;
+  }
+  body { font-family: 'Cairo', system-ui, sans-serif; background: var(--bg); color: var(--ink); }
+
+  /* الهيدر */
+  .hero {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 100%);
+    color: #fff; padding: 2.5rem 0 5.5rem;
+  }
+  .hero h1 { font-weight: 800; font-size: clamp(1.5rem, 3vw, 2.1rem); }
+  .hero p { color: #b8c7da; margin: 0; }
+
+  /* بطاقات الإحصاء فوق الهيدر */
+  .stats { margin-top: -3.6rem; }
+  .stat {
+    background: #fff; border-radius: 16px; padding: 1.1rem 1.3rem;
+    border: 1px solid var(--line); box-shadow: 0 8px 24px rgba(18,38,63,.08);
+    display: flex; align-items: center; gap: 1rem; height: 100%;
+  }
+  .stat .ico {
+    width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;
+    font-size: 1.4rem; flex-shrink: 0;
+  }
+  .stat .num { font-size: 1.8rem; font-weight: 800; line-height: 1; }
+  .stat .lbl { color: var(--muted); font-size: .9rem; }
+  .ico-navy  { background: #e3eaf4; color: var(--navy); }
+  .ico-teal  { background: #d9f1f1; color: var(--teal); }
+  .ico-amber { background: #fbefd0; color: #a97800; }
+
+  /* الأقسام */
+  .panel {
+    background: #fff; border-radius: 16px; border: 1px solid var(--line);
+    box-shadow: 0 4px 16px rgba(18,38,63,.05); overflow: hidden;
+  }
+  .panel-head {
+    padding: 1.1rem 1.4rem; border-bottom: 1px solid var(--line);
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem;
+  }
+  .panel-head h2 { font-size: 1.1rem; font-weight: 700; margin: 0; }
+  .panel-head small { color: var(--muted); }
+
+  table { margin: 0; }
+  thead th {
+    background: #f6f8fb !important; color: var(--muted); font-weight: 600; font-size: .85rem;
+    border-bottom: 1px solid var(--line) !important; padding: .85rem 1.2rem; white-space: nowrap;
+  }
+  tbody td { padding: 1rem 1.2rem; border-color: var(--line); vertical-align: middle; }
+  tbody tr:hover { background: #fafcfe; }
+
+  .avatar {
+    width: 40px; height: 40px; border-radius: 50%; background: var(--navy); color: #fff;
+    display: inline-grid; place-items: center; font-weight: 700; margin-inline-end: .7rem;
+  }
+  .sid { color: var(--muted); font-size: .8rem; }
+
+  /* شريط المتوسط والحضور */
+  .meter { height: 7px; background: #e8edf3; border-radius: 99px; overflow: hidden; min-width: 90px; }
+  .meter > span { display: block; height: 100%; border-radius: 99px; }
+
+  /* التقدير */
+  .grade {
+    width: 38px; height: 38px; border-radius: 10px; display: inline-grid; place-items: center;
+    font-weight: 800; font-size: 1.05rem;
+  }
+  .g-A { background: #d8f3e4; color: #137a46; }
+  .g-B { background: #dcecfb; color: #1a64ad; }
+  .g-C { background: #e0f2f1; color: #0f7a74; }
+  .g-D { background: #fbefd0; color: #9a6c00; }
+  .g-E { background: #fde3d2; color: #b3500f; }
+  .g-F { background: #fbdcdc; color: #b42323; }
+
+  /* حالة النتيجة */
+  .pill { padding: .3rem .8rem; border-radius: 99px; font-size: .85rem; font-weight: 600; white-space: nowrap; }
+  .pill-ok  { background: #d8f3e4; color: #137a46; }
+  .pill-rev { background: #fbefd0; color: #9a6c00; }
+
+  /* الرأفة */
+  .shift { display: flex; align-items: center; gap: .6rem; font-weight: 700; }
+  .shift .old { color: var(--muted); text-decoration: line-through; font-weight: 400; }
+  .shift .new { color: var(--teal); font-size: 1.1rem; }
+  .plus { background: #d9f1f1; color: var(--teal); padding: .15rem .6rem; border-radius: 99px; font-weight: 700; font-size: .85rem; }
+
+  .final {
+    background: linear-gradient(135deg, var(--teal), #0b6b6d); color: #fff;
+    border-radius: 16px; padding: 1.8rem; text-align: center;
+    box-shadow: 0 10px 28px rgba(15,139,141,.28);
+  }
+  .final .big { font-size: 3.4rem; font-weight: 800; line-height: 1.1; }
+  .final .cap { color: #cdeeee; }
+  .empty { text-align: center; color: var(--muted); padding: 1.5rem; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="container">
+    <h1>نظام إدارة وتحليل نتائج الطلاب</h1>
+    <p>تقرير المتوسطات والتقديرات ولجنة الرأفة  </p>
+  </div>
+</header>
+
+<main class="container pb-5">
+
+  <!-- إحصاءات سريعة -->
+  <section class="stats row g-3 mb-4">
+    <div class="col-12 col-md-4">
+      <div class="stat"><div class="ico ico-navy">👥</div>
+        <div><div class="num" id="statTotal">0</div><div class="lbl">إجمالي الطلاب</div></div></div>
+    </div>
+    <div class="col-12 col-md-4">
+      <div class="stat"><div class="ico ico-teal">✔</div>
+        <div><div class="num" id="statPass">0</div><div class="lbl">ناجح</div></div></div>
+    </div>
+    <div class="col-12 col-md-4">
+      <div class="stat"><div class="ico ico-amber">!</div>
+        <div><div class="num" id="statReview">0</div><div class="lbl">يحتاج مراجعة</div></div></div>
+    </div>
+  </section>
+
+  <!-- تقرير الطلاب -->
+  <section class="panel mb-4">
+    <div class="panel-head">
+      <h2>تقرير الطلاب</h2><small>المتوسط، التقدير، والنتيجة النهائية</small>
+    </div>
+    <div class="table-responsive">
+      <table class="table mb-0">
+        <thead>
+          <tr><th>الطالب</th><th>الدرجات</th><th>الحضور</th><th>المتوسط</th><th>التقدير</th><th>النتيجة</th></tr>
+        </thead>
+        <tbody id="reportBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- لجنة الرأفة -->
+  <section class="row g-4">
+    <div class="col-12 col-lg-8">
+      <div class="panel h-100">
+        <div class="panel-head">
+          <h2>لجنة الرأفة</h2><small>الطلاب اللي متوسطهم بين 40 و 49</small>
+        </div>
+        <div class="table-responsive">
+          <table class="table mb-0">
+            <thead><tr><th>الطالب</th><th>الدرجات الممنوحة</th><th>المتوسط (قبل ← بعد)</th></tr></thead>
+            <tbody id="mercyBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-4">
+      <div class="final h-100 d-flex flex-column justify-content-center">
+        <div class="cap mb-2">متوسط المتعثرين بعد الرأفة</div>
+        <div class="big" id="mercyAvg">0</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ========== 1) الكلاس Student ========== */
+class Student {
+  constructor(id, name, grades, attendance) {
+    this.id = id;                  // رقم الجلوس
+    this.name = name;              // الاسم
+    this.grades = grades;          // مصفوفة درجات 3 مواد
+    this.attendance = attendance;  // نسبة الحضور
+  }
+
+  // حساب المتوسط باستخدام reduce
+  getAverage() {
+    const total = this.grades.reduce((sum, g) => sum + g, 0);
+    return total / this.grades.length;
+  }
+
+  // التقدير بالحروف
+  getGrade(average) {
+    if (average >= 85) return "A";
+    else if (average >= 75) return "B";
+    else if (average >= 65) return "C";
+    else if (average >= 55) return "D";
+    else if (average >= 50) return "E";
+    else return "F";
+  }
+
+  // النتيجة النهائية: متوسط >= 50 && حضور >= 75
+  getResult() {
+    if (this.getAverage() >= 50 && this.attendance >= 75) {
+      return "ناجح";
+    }
+    return "يحتاج مراجعة";
+  }
+}
+
+/* ========== 2) المصفوفة الرئيسية ========== */
+const studentsList = [
+  new Student(1001, "أسماء الميداني",   [90, 85, 88], 95),  // متوسط 87.67
+  new Student(1002, "سارة محمود", [45, 48, 42], 80),  // متوسط 45   (متعثرة)
+  new Student(1003, "عمر خالد",   [40, 50, 46], 70),  // متوسط 45.33 (متعثر)
+  new Student(1004, "منى حسن",    [60, 55, 62], 90)   // متوسط 59
+];
+
+/* ========== 3) تقرير كل طالب ========== */
+const report = studentsList.map(s => {
+  const avg = s.getAverage();
+  return {
+    id: s.id,
+    name: s.name,
+    grades: s.grades,
+    attendance: s.attendance,
+    average: avg,
+    grade: s.getGrade(avg),
+    result: s.getResult()
+  };
+});
+
+console.log("===== تقرير الطلاب =====");
+report.forEach(r => {
+  console.log(`الاسم: ${r.name} | المتوسط: ${r.average.toFixed(2)} | التقدير: ${r.grade} | النتيجة: ${r.result}`);
+});
+
+/* ========== 4) لجنة الرأفة ========== */
+const MERCY_POINTS = 5;
+
+// الاستخراج: filter
+const strugglingStudents = studentsList.filter(s => {
+  const avg = s.getAverage();
+  return avg >= 40 && avg <= 49;
+});
+
+// المعالجة: map (كائنات جديدة دون تعديل الأصل)
+const mercyList = strugglingStudents.map(s => ({
+  id: s.id,
+  name: s.name,
+  oldAverage: s.getAverage(),
+  mercyPoints: MERCY_POINTS,
+  newAverage: s.getAverage() + MERCY_POINTS
+}));
+
+// التحليل: reduce لجمع المتوسطات الجديدة
+const totalNewAverages = mercyList.reduce((sum, s) => sum + s.newAverage, 0);
+
+// درع الحماية: منع القسمة على صفر
+const mercyAverage = mercyList.length === 0
+  ? 0
+  : totalNewAverages / mercyList.length;
+
+console.log("===== الطلاب المتعثرون بعد الرأفة =====");
+console.log(mercyList);
+console.log("متوسط درجات المتعثرين بعد التعديل:", mercyAverage.toFixed(2));
+
+/* ========== 5) العرض في الصفحة ========== */
+const barColor = v => v >= 75 ? "#1fa464" : v >= 50 ? "#0f8b8d" : "#d64545";
+const meter = (v, color) =>
+  `<div class="meter"><span style="width:${Math.min(v, 100)}%;background:${color}"></span></div>`;
+
+const studentCell = (name, id) => `
+  <div class="d-flex align-items-center">
+    <span class="avatar">${name.charAt(0)}</span>
+    <div><div class="fw-bold">${name}</div><div class="sid">رقم الجلوس ${id}</div></div>
+  </div>`;
+
+document.getElementById("statTotal").textContent = report.length;
+document.getElementById("statPass").textContent = report.filter(r => r.result === "ناجح").length;
+document.getElementById("statReview").textContent = report.filter(r => r.result !== "ناجح").length;
+
+document.getElementById("reportBody").innerHTML = report.map(r => `
+  <tr>
+    <td>${studentCell(r.name, r.id)}</td>
+    <td class="text-secondary">${r.grades.join(" · ")}</td>
+    <td style="min-width:130px">
+      <div class="small fw-semibold mb-1">${r.attendance}%</div>
+      ${meter(r.attendance, r.attendance >= 75 ? "#1fa464" : "#e0a526")}
+    </td>
+    <td style="min-width:130px">
+      <div class="small fw-semibold mb-1">${r.average.toFixed(2)}</div>
+      ${meter(r.average, barColor(r.average))}
+    </td>
+    <td><span class="grade g-${r.grade}">${r.grade}</span></td>
+    <td><span class="pill ${r.result === "ناجح" ? "pill-ok" : "pill-rev"}">${r.result}</span></td>
+  </tr>`).join("");
+
+document.getElementById("mercyBody").innerHTML = mercyList.length === 0
+  ? '<tr><td colspan="3" class="empty">لا يوجد طلاب متعثرون</td></tr>'
+  : mercyList.map(s => `
+    <tr>
+      <td>${studentCell(s.name, s.id)}</td>
+      <td><span class="plus">+${s.mercyPoints}</span></td>
+      <td>
+        <div class="shift">
+          <span class="old">${s.oldAverage.toFixed(2)}</span>
+          <span>←</span>
+          <span class="new">${s.newAverage.toFixed(2)}</span>
+        </div>
+      </td>
+    </tr>`).join("");
+
+document.getElementById("mercyAvg").textContent = mercyAverage.toFixed(2);
+</script>
+</body>
+</html>
